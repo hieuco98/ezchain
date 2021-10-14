@@ -16,6 +16,7 @@
     "express": "^4.17.1",
     "express-session": "^1.17.2",
     "mongoose": "^6.0.8",
+    "supervisor": "^0.12.0",
     "truffle": "^5.4.13",
     "truffle-contract": "^4.0.31"
   }

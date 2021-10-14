@@ -9,7 +9,7 @@ var xhr = new XMLHttpRequest();
     {
         materialName : nameMaterial,
         materialCode : codeMaterial,
-        farmMaterial : farmMaterial
+        materialFarm : farmMaterial
     }
     xhr.open('POST','/registerMaterial',true);
     xhr.setRequestHeader('content-type','application/json');
@@ -26,8 +26,14 @@ var xhr = new XMLHttpRequest();
  }
  function getAllRegister() {
     let products = [];
-      xhr.open('GET','/showMaterial');
-      xhr.send();
+    var nameFarm = $("#nameFarmA").val()
+    var farm = 
+    {
+      farmName:nameFarm
+    }
+      xhr.open('POST','/showMaterial',true);
+      xhr.setRequestHeader('content-type','application/json');
+      
      xhr.onload = function()
          {
              //console.log(xhr.responseText);
@@ -36,6 +42,7 @@ var xhr = new XMLHttpRequest();
              showAllRegister(products);
              //console.log(products)
          }
+         xhr.send(JSON.stringify(farm));
       //return products;
     }
     
@@ -56,11 +63,13 @@ function addBatchMaterial()
   var materialCode = $("#materialCodeCheckB").val();
   var materialCheckList = $("#materialCheckListB").val();
   var materialWeight = $("#materialWeightB").val();
+  var nameFarm = $("#nameFarmB").val();
   var newBatchMaterial ={
     materialBatch : materialBatch,
     materialCode : materialCode,
     materialCheckList : materialCheckList,
-    materialWeight :materialWeight
+    materialWeight :materialWeight,
+    materialFarm : nameFarm
   }
   console.log(newBatchMaterial)
   xhr.open('POST','/addBatchMaterial',true);
@@ -153,12 +162,19 @@ function checkTransaction()
 
 }
 window.onload = function() {
-    getAllRegister();
+    //getAllRegister();
     $("#registerMaterialBtnA").click(function() {
         registerMaterial();
         //getAllContract();
         // getAllRegister()
       });
+
+      $("#checkMaterialA").click(function() {
+        // registerMaterial();
+        //getAllContract();
+         getAllRegister()
+      });
+      
       $("#addBatchMaterialB").click(function(e) {
         e.preventDefault();
        addBatchMaterial();

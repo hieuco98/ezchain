@@ -21,7 +21,7 @@ app.use(session({
      }
   }));
 app.use(express.static(__dirname + '/public'));
-app.get('/',(req,res)=>res.sendFile(path.resolve(__dirname, './public/login.html')));
+app.get('/',(req,res)=>res.sendFile(path.resolve(__dirname, './public/supplier.html')));
 
 
 
@@ -32,9 +32,9 @@ const prc = require('./build/contracts/PRC.json');
 const bac = require('./build/contracts/BAC.json');
 const tuc = require('./build/contracts/TUC.json');
 const contract = require('truffle-contract');
-var prcAddress = '0x4ae9cbd253e6c3621702a1df9ddb0161217e106d';
-const address = '0x6C2cA4BD44B0b5FA149Aaa122b35904bc97609B4';
-const receive = '0x2112BA4A4caD26BbdDe2933fB1960f74A3875661';
+var prcAddress ='0x5d8b3d5d4aa10e09b9e3ab049383d412b2f0d396';
+const address = '0xc7E6227f8129D5DC7caB0A0c98ECF573fbb37e15';
+const receive = '0x2E40A74D82d1CfDC0A67C08C2bA6A81F5729232d';
 // var newTUC;
 // var newBAC;
 // var bacAddress;
@@ -64,121 +64,7 @@ app.listen(8880,function()
 {
     console.log('Server is running on port 8880');
 })
-mongoose.connect('mongodb://localhost:27017/SupplyChain', async function(err)
-{
-    if(err)
-    {
-        console.log("Not connect to Database"+ err);
-    }
-    else{
-    console.log('Connect to Database Success');
-    }
-})
-app.post('/register', function(req,res)
-{
-    var user = new User();
-    //console.log(req.body);
-    user.username = req.body.username;
-    user.password = req.body.password;
-    user.email = req.body.email;
-    user.role = 3;
-    //user.role = 1;
-    if(req.body.username == null || req.body.username == '' || req.body.password == null || req.body.password == ''||req.body.email == null || req.body.email == '' )
 
-    {
-        res.send('Invalid Username or Password');
-    }
-    else{
-        user.save(function(err)
-        {
-            if(err)
-            {
-                console.log(err);
-                res.send("Username or email is exist");
-            }
-            else
-            {
-                res.send(
-                    {
-                        code:200,
-                    }
-                )
-            }
-        })
-    }
-})
-app.post('/login',function(req,res)
-{
-    //console.log(req.session);
-    sess = req.session;
-    sess.username = req.body.username;
-    User.findOne({ username : req.body.username }).select('email username password role').exec(function(err,user)
-    {
-        if (err) throw err;
-        if(!user)
-        {
-            res.send(
-                {
-                    code: 700,
-                    status: "Wrong username"
-                    });
-        }
-        else if(user)
-        {
-            //console.log(user);
-            var validPassword = user.comparePassword(req.body.password);
-            if(!validPassword)
-            {
-                res.send(   {
-                    code: 700,
-                    status: "Wrong password"
-                    });
-            }
-            else 
-            {
-                    req.session.user_id = user._id;
-                    // req.session.username = user.username;
-                    //console.log(req.session);
-                    req.session.save(() => {
-                       // console.log(req.session);
-                        return res.send(
-                            {
-                                code:200,
-                                user_id:user._id,
-                                role: user.role
-                            }
-                        );
-                      });
-                
-            }
-        }
-    })
-})
-app.get('/checkLogin',function(req,res)
-{
-    //console.log(req.session);
-    if(!sess.username){
-        res.send('You are not logged in');
-      }else{
-        res.send(
-            { status: 'You are logged in',
-            user: sess.username});
-      }
-})
-app.get('/logout', function(req, res, next) {
-    sess.username = null;
-    console.log(req.session);
-    if (req.session) {
-      // delete session object
-      req.session.destroy(function(err) {
-        if(err) {
-          return next(err);
-        } else {
-          return res.send("Đăng xuất thành công");
-        }
-      });
-    }
-  });
   app.post('/registerMaterial',function (req,res)
   {
       var prcInstance;
@@ -207,7 +93,9 @@ app.get('/logout', function(req, res, next) {
               });
       }).then(function(txReceipt) {
           console.log(txReceipt);
-          res.send(txReceipt.transactionHash);
+          res.send({
+            BACaddress: newBAC
+          });
           // var BACaddress = { BACaddress : newBAC}
           // var datasend = JSON.stringify(BACaddress);
           // res.send(datasend);
@@ -236,32 +124,36 @@ function getRegisterMaterial(id)
           var month = a.getMonth();
           var date = a.getDate();
           var time = date + '/' + month + '/' + year;
-          if(product[2]===sess.username)
-          {
+          
+          
           return {
             id: id,
             name: product[0],
             code: product[1],
             owner: product[2],
             time: time,
-            addr: product[4]
+            BACaddr: product[4]
           }
-        }
         })
       });
 }
-app.get('/showMaterial',async function(req, res)
+app.post('/showMaterial',async function(req, res)
 {
     let products = [];
+    console.log(req.body.farmName)
     let total = await getTotalMaterial();
     console.log(total)
     for (let i = 1; i <= total; i++) {
         let product = await getRegisterMaterial(i);
+        console.log(product)
+        if(product.owner === req.body.farmName)
+        {
         products.push(product);
+        }
       }
       console.log(products);
-      var datasend = JSON.stringify(products);
-      res.send(datasend);
+      // var datasend = JSON.stringify(products);
+      res.send(products);
 
 })
 app.post('/addBatchMaterial',async function(req,res)
@@ -273,7 +165,7 @@ app.post('/addBatchMaterial',async function(req,res)
       //console.log(req.body);
       var materialBatch = req.body.materialBatch;
       var materialCode = req.body.materialCode;
-      var materialFarm = sess.username;
+      var materialFarm = req.body.materialFarm;
       var materialCheckList = req.body.materialCheckList;
       var materialWeight = req.body.materialWeight;
       await Prc.at(prcAddress).then(async function(instance) {
@@ -304,7 +196,9 @@ app.post('/addBatchMaterial',async function(req,res)
           res.send(
             {
               status:"Thêm lô Nguyên liệu thành công",
-              transactionHash: txReceipt.transactionHash
+              transactionHash: txReceipt.receipt.transactionHash,
+              tucAddress:newTUC,
+              transactionID: txReceipt.tx
           }
             );
         });
@@ -315,6 +209,7 @@ function getBatch(id,bacAddress) {
     return Bac.at(bacAddress).then(function(instance) {
       bacInstance = instance;
       return bacInstance.getBatchOfId.call(id).then(function(batch) {
+        console.log(batch)
         var a = new Date(batch[5] * 1000);
         var year = a.getFullYear();
         var month = a.getMonth();
@@ -326,7 +221,8 @@ function getBatch(id,bacAddress) {
           codeMaterial: batch[1],
           farm: batch[2],
           checklist: batch[3],
-          addr: batch[4],
+          weight: batch[6],
+          TUCaddr: batch[4],
           time: time
         }
       })
@@ -366,8 +262,8 @@ app.post('/getBatchMaterial',async function(req,res)
         batchs.push(batch);
       }
       console.log(batchs);
-      var datasend = JSON.stringify(batchs);
-      res.send(datasend);
+      // var datasend = JSON.stringify(batchs);
+      res.send(batchs);
 })
 app.post('/createTransactionBatch',async function(req,res)
 {
@@ -375,7 +271,7 @@ app.post('/createTransactionBatch',async function(req,res)
     var materialCode = req.body.materialCode;
     var materialBatch = req.body.materialBatch;
     var manufacture = req.body.manufacture;
-    var materialFarm = sess.username;
+    var materialFarm = req.body.materialFarm;
     var bacAddress;
     var tucAddress;
     await Prc.at(prcAddress).then(function(instance) {
@@ -395,6 +291,7 @@ var transaction = await web3.eth.sendTransaction({
     to: receive,
     gas: defaultGas
   });
+  console.log(transaction)
   var transactionHash =transaction.transactionHash ;
   Tuc.at(tucAddress).then(function(instance) {
     tucInstance = instance;
@@ -403,7 +300,10 @@ var transaction = await web3.eth.sendTransaction({
       gas: defaultGas
     });
   }).then(function(txReceipt) {
-      res.send("Giao dịch cập nhật thành công  ")
+      res.send({
+        transactionID : transactionHash,
+        transactionHash : txReceipt.receipt.transactionHash
+  })
     console.log(txReceipt);
   })
 })
@@ -433,10 +333,293 @@ Tuc.at(tucAddress).then(function(instance) {
         var year = a.getFullYear();
         var month = a.getMonth();
         var date = a.getDate();
-        var time = date + '/' + month + '/' + year;
+        var hour = a.getHours();
+        var minute = a.getMinutes();
+        var time = hour+ ":" +  minute + " "+ date + '/' + month + '/' + year;
      res.send({
       TUC : tucAddress,
-      currentTx: tr[0],
+    transactionID: tr[0],
+      se: tr[1],
+      re: tr[2],
+      time: time
+     })
+    })
+  });
+})
+app.post('/registerProduct',function (req,res)
+  {
+      var prcInstance;
+      var newBAC;
+      //console.log(req.body);
+      var productName = req.body.productName;
+      var productCode = req.body.productCode;
+      var factoryName = req.body.factoryName;
+      Bac.new({
+        from: address,
+        gas: defaultGas
+    }).then(function(instance)
+    {
+        console.log("BAC CREATED");
+       newBAC = instance.address; 
+       console.log(newBAC);
+    }).then(function()
+    {
+        Prc.at(prcAddress).then(function(instance) {
+            //console.log(instance);
+            prcInstance = instance;
+            //console.log("Get PRC address Success")
+            return  prcInstance.productRegister(productName, productCode, factoryName, newBAC, {
+                from: address,
+                gas: defaultGas
+              });
+      }).then(function(txReceipt) {
+          console.log(txReceipt);
+          res.send(
+            { 
+              BACaddress: newBAC
+            });
+          // var BACaddress = { BACaddress : newBAC}
+          // var datasend = JSON.stringify(BACaddress);
+          // res.send(datasend);
+  });
+  });
+  })
+  function getTotalProduct()
+{
+    var prcInstance;
+    return  Prc.at(prcAddress).then(function(instance) {
+        prcInstance = instance;
+        return prcInstance.getNumberOfProducts.call()
+      }).then(function(total) {
+        return total;
+      });
+}
+function getRegisterProduct(id)
+{
+    var prcInstance;
+    return Prc.at(prcAddress).then(function(instance) {
+        prcInstance = instance;
+        return prcInstance.getProductOfId.call(id).then(function(product) {
+          console.log(product);
+          var a = new Date(product[3] * 1000);
+          var year = a.getFullYear();
+          var month = a.getMonth();
+          var date = a.getDate();
+          var time = date + '/' + month + '/' + year;
+          
+          
+          return {
+            id: id,
+            name: product[0],
+            code: product[1],
+            owner: product[2],
+            time: time,
+            BACaddr: product[4]
+          }
+        })
+      });
+}
+app.post('/showProduct',async function(req, res)
+{
+    let products = [];
+    console.log(req.body.factoryName)
+    let total = await getTotalProduct();
+    console.log(total)
+    for (let i = 1; i <= total; i++) {
+        let product = await getRegisterProduct(i);
+        console.log(product)
+        if(product.owner === req.body.factoryName)
+        {
+        products.push(product);
+        }
+      }
+      console.log(products);
+      // var datasend = JSON.stringify(products);
+      res.send(products);
+})
+app.post('/addBatchProduct',async function(req,res)
+{
+    //console.log(req.body);
+    var prcInstance;
+    var bacAddress;
+    var newTUC;
+      //console.log(req.body);
+      var productBatch = req.body.productBatch;
+      var productCode = req.body.productCode;
+      var productFactory = req.body.productFactory;
+      // var materialCheckLis = req.body.materialCheckList;
+      var productNumber  = req.body.productNumber;
+      await Prc.at(prcAddress).then(async function(instance) {
+        prcInstance = instance;
+        return await prcInstance.getIdOfCode.call(productCode);
+      }).then(async function(idd) {
+        id = idd;
+        console.log(id);
+        return await prcInstance.getProductOfId.call(id);
+      }).then(async function(product) {
+        bacAddress = await product[4];
+      })
+      Tuc.new({
+        from: address,
+        gas: defaultGas
+      }).then(function(instance) {
+        newTUC = instance.address;
+      }).then(function() {
+        console.log(bacAddress);
+        Bac.at(bacAddress).then(function(instance) {
+          bacInstance = instance;
+          return bacInstance.addProductBatch(productBatch, productCode,productNumber,productFactory,newTUC,{
+            from: address,
+            gas: defaultGas
+          });
+        }).then(function(txReceipt) {
+          console.log(txReceipt);
+          res.send(
+            {
+              status:"Thêm lô Sản phẩm thành công",
+              transactionHash: txReceipt.receipt.transactionHash,
+              tucAddress:newTUC,
+              transactionID: txReceipt.tx
+          }
+            );
+        });
+      });
+})
+function getProductBatch(id,bacAddress) {
+  var bacInstance;
+  return Bac.at(bacAddress).then(function(instance) {
+    bacInstance = instance;
+    return bacInstance.getproBatchOfId.call(id).then(function(batch) {
+      console.log(batch)
+      var a = new Date(batch[5] * 1000);
+      var year = a.getFullYear();
+      var month = a.getMonth();
+      var date = a.getDate();
+      var time = date + '/' + month + '/' + year;
+      return {
+        id: id,
+        batch: batch[0],
+        codeMaterial: batch[1],
+        farm: batch[2],
+        numberProduct: batch[3],
+        weight: batch[6],
+        TUCaddr: batch[4],
+        time: time
+      }
+    })
+  });
+}
+
+// The number of all added batches
+function getTotalProductBatch(bacAddress) {
+  var bacInstance;
+  return Bac.at(bacAddress).then(function(instance) {
+    bacInstance = instance;
+    return bacInstance.getNumberOfproBatchs.call()
+  }).then(function(total) {
+    return total;
+  });
+}
+app.post('/getBatchProduct',async function(req,res)
+{
+  var productCode = req.body.productCode;
+  var prcInstance;
+  var bacAddress;
+  let batchs = [];
+  await Prc.at(prcAddress).then(async function(instance) {
+      prcInstance = instance;
+      return await prcInstance.getIdOfCode.call(productCode);
+    }).then(async function(idd) {
+      id = idd;
+      console.log(id);
+      return await prcInstance.getProductOfId.call(id);
+    }).then(async function(product) {
+      bacAddress = await product[4];
+    })
+    let total = await getTotalProductBatch(bacAddress);
+    console.log(total);
+    for (let i = 1; i <= total; i++) {
+      let batch = await getProductBatch(i,bacAddress);
+      batchs.push(batch);
+    }
+    console.log(batchs);
+    // var datasend = JSON.stringify(batchs);
+    res.send(batchs);
+})
+app.post('/createTransactionBatchProduct',async function(req,res)
+{
+    console.log(req.body);
+    var productCode = req.body.productCode;
+    var productBatch = req.body.productBatch;
+    var market = req.body.market;
+    var productFactory = req.body.productFactory;
+    var bacAddress;
+    var tucAddress;
+    await Prc.at(prcAddress).then(function(instance) {
+        prcInstance = instance;
+        return prcInstance.getAddressOfCode.call(productCode);
+      }).then(function(a) {
+        bacAddress = a;
+        return Bac.at(bacAddress).then(function(instance) {
+          bacInstance = instance;
+          return bacInstance.getAddressOfproBatch.call(productBatch);
+        }).then(function(b) {
+          tucAddress = b;
+        });
+})
+var transaction = await web3.eth.sendTransaction({
+    from: address,
+    to: receive,
+    gas: defaultGas
+  });
+  console.log(transaction)
+  var transactionHash =transaction.transactionHash ;
+  Tuc.at(tucAddress).then(function(instance) {
+    tucInstance = instance;
+    return tucInstance.addTr(transactionHash,market,productFactory,{
+      from: address,
+      gas: defaultGas
+    });
+  }).then(function(txReceipt) {
+      res.send({
+        transactionID : transactionHash,
+        transactionHash : txReceipt.receipt.transactionHash
+  })
+    console.log(txReceipt);
+  })
+})
+app.post('/checkTransactionBatchProduct',async function(req,res)
+{
+    var productCode = req.body.productCode;
+    var productBatch = req.body.productBatch;
+    var bacAddress;
+    var tucAddress;
+    await Prc.at(prcAddress).then(function(instance) {
+        prcInstance = instance;
+        return prcInstance.getAddressOfCode.call(productCode);
+      }).then(function(a) {
+        bacAddress = a;
+        return Bac.at(bacAddress).then(function(instance) {
+          bacInstance = instance;
+          return bacInstance.getAddressOfproBatch.call(productBatch);
+        }).then(function(b) {
+          tucAddress = b;
+        });
+})
+Tuc.at(tucAddress).then(function(instance) {
+    tucInstance = instance;
+    return tucInstance.getTrOfId.call(1).then(function(tr) {
+      console.log(tr);
+        var a = new Date(tr[3] * 1000);
+        var year = a.getFullYear();
+        var month = a.getMonth();
+        var date = a.getDate();
+        var hour = a.getHours();
+        var minute = a.getMinutes();
+        var time = hour+ ":" +  minute + " "+ date + '/' + month + '/' + year;
+     res.send({
+      TUC : tucAddress,
+      transactionID: tr[0],
       se: tr[1],
       re: tr[2],
       time: time

@@ -9,8 +9,7 @@ contract PRC {
   struct product {
     string _productName;
     string _productCode;
-    string _rawMaterials;
-    address _productOwner;
+    string _productOwner;
     uint _timestamp;
     address _BACAddress;
   }
@@ -57,13 +56,10 @@ contract PRC {
   }
 
   // Register product information
-  function productRegister(string productName, string productCode, string rawMaterials, address BACAddress) public onlyAdmin {
+  function productRegister(string productName, string productCode, string factoryName, address BACAddress) public onlyAdmin {
 
     require(bytes(_productCodeToName[productCode]).length == 0);
 
-    require(bytes(productName).length >= 3 && bytes(productName).length <= 64);
-    require(bytes(productCode).length == 13);
-    require(bytes(rawMaterials).length >= 9);
 
     _productCodeToName[productCode] = productName;
     _productCodeToId[productCode] = _numberOfProducts;
@@ -71,8 +67,7 @@ contract PRC {
 
     _products[_numberOfProducts]._productName = productName;
     _products[_numberOfProducts]._productCode = productCode;
-    _products[_numberOfProducts]._rawMaterials = rawMaterials;
-    _products[_numberOfProducts]._productOwner = msg.sender;
+    _products[_numberOfProducts]._productOwner = factoryName;
     _products[_numberOfProducts]._timestamp = now;
     _products[_numberOfProducts]._BACAddress = BACAddress;
 
@@ -110,12 +105,11 @@ contract PRC {
   }
 
   // Get product information by id
-  function getProductOfId(uint id) constant public returns(string productName, string productCode, string rawMaterials, address productOwner, uint timestamp, address BACAddress) {
+  function getProductOfId(uint id) constant public returns(string productName, string productCode,  string factoryName, uint timestamp, address BACAddress) {
 
     productName = _products[id]._productName;
     productCode = _products[id]._productCode;
-    rawMaterials = _products[id]._rawMaterials;
-    productOwner = _products[id]._productOwner;
+    factoryName = _products[id]._productOwner;
     timestamp = _products[id]._timestamp;
     BACAddress = _products[id]._BACAddress;
   }
